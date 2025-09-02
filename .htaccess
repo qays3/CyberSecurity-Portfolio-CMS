@@ -1,0 +1,86 @@
+Options -Indexes
+<IfModule pagespeed_module>
+	ModPagespeed off
+</IfModule>
+<IfModule mod_expires.c>
+	ExpiresActive On
+	ExpiresDefault A0
+	ExpiresByType image/gif A691200
+	ExpiresByType image/png A691200
+	ExpiresByType image/jpeg A691200
+	ExpiresByType text/css A691200
+	ExpiresByType text/javascript A691200
+	ExpiresByType application/javascript A691200
+</IfModule>
+<FilesMatch "^(web\.config)$">
+	<IfModule mod_authz_core.c>
+		Require all denied
+	</IfModule>
+	<IfModule !mod_authz_core.c>
+		Order allow,deny
+	</IfModule>
+</FilesMatch>
+
+<IfModule mod_negotiation.c>
+
+</IfModule>
+RewriteEngine On
+RewriteBase /
+RewriteCond %{HTTP:Authorization} ^(.*)
+RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
+RewriteRule ^\.well-known/.+ - [L]
+DirectoryIndex index.php index.cgi index.html
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+
+    RewriteCond %{THE_REQUEST} ^GET\ /(.+)\.php\ HTTP
+    RewriteRule ^(.+)\.php$ /$1 [L,R=301]
+
+
+    RewriteCond %{REQUEST_FILENAME}.php -f
+    RewriteRule ^(.*)$ $1.php [L]
+
+
+    RewriteCond %{REQUEST_FILENAME}.html -f
+    RewriteRule ^(.+)$ $1.html [L]
+
+
+    RewriteCond %{THE_REQUEST} ^GET\ /index(\.php)?\ HTTP
+    RewriteRule ^index(\.php)?$ / [L,R=301]
+
+
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)/$ /$1 [L,R=301]
+</IfModule>
+
+Options +FollowSymLinks
+RewriteEngine On
+
+RewriteCond %{REQUEST_FILENAME} !-f [OR]
+RewriteCond %{REQUEST_URI} ^\/(js\/(main\.js|bootstrap\.min\.js)|css\/(\d+\.css|common\.css|site\.css|bootstrap\.min\.css))$
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ ncsitebuilder/$1 [L,QSA]
+
+DirectoryIndex index.php index.cgi index.html
+RewriteCond %{REQUEST_FILENAME} !-f [OR]
+RewriteCond %{REQUEST_URI} ^\/(js\/(main\.js|bootstrap\.min\.js)|css\/(\d+\.css|common\.css|site\.css|bootstrap\.min\.css))$
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ ncsitebuilder/$1 [L,QSA]
+
+<Files 403.shtml>
+order allow,deny
+allow from all
+</Files>
+
+ 
+RewriteEngine on
+RewriteCond %{HTTP_REFERER} !^http(s)?://(www\.)?qayssarayra.com/.*$      [NC]
+RewriteRule .*\.(exe)$ http://qayssarayra.com [R,NC]
+ 
+
+ 
+ErrorDocument 403 /403.html
+ 
