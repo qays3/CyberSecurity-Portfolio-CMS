@@ -6,7 +6,7 @@ async function loadPortfolioData() {
     isLoading = true;
     
     try {
-        const response = await fetch('/index.php?api=content', {
+        const response = await fetch('/?api=content', {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
