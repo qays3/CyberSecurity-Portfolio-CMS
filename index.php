@@ -215,7 +215,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['api']) && $_GET['api'] 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Qays Sarayra - Portfolio</title>
+    <title id="pageTitle">Portfolio</title>
     <link rel="stylesheet" href="./assets/css/main.css">
     <link rel="stylesheet" href="./assets/css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -273,7 +273,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['api']) && $_GET['api'] 
             <div class="sidebar-header">
                 <div class="profile-section">
                     <div class="profile-image-container">
-                        <img id="profileLogo" alt="Profile" class="profile-image">
+                        <img id="profileLogo"  class="profile-image">
                         <div class="status-indicator"></div>
                     </div>
                     <div class="profile-info">
@@ -286,76 +286,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['api']) && $_GET['api'] 
                 </div>
                 
                 <div class="social-section">
-                    <div class="social-links" id="socialLinks">
-                        <a href="https://buymeacoffee.com/hidden" target="_blank" class="social-link" aria-label="Buy Me A Coffee">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
-                                <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
-                                <line x1="6" y1="1" x2="6" y2="4"/>
-                                <line x1="10" y1="1" x2="10" y2="4"/>
-                                <line x1="14" y1="1" x2="14" y2="4"/>
-                            </svg>
-                        </a>
-                        <a href="https://github.com/qays3" target="_blank" class="social-link" aria-label="GitHub">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
-                            </svg>
-                        </a>
-                        <a href="https://www.linkedin.com/in/qays-sarayra/" target="_blank" class="social-link" aria-label="LinkedIn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
-                                <rect x="2" y="9" width="4" height="12"/>
-                                <circle cx="4" cy="4" r="2"/>
-                            </svg>
-                        </a>
-                        <a href="https://qayssarayra.com" target="_blank" class="social-link" aria-label="Website">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <circle cx="12" cy="12" r="10"/>
-                                <line x1="2" y1="12" x2="22" y2="12"/>
-                                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                            </svg>
-                        </a>
-                    </div>
+                    <div class="social-links" id="socialLinks"></div>
                 </div>
             </div>
             <nav class="sidebar-nav">
-                <ul class="nav-list">
-                    <li class="nav-item">
-                        <a href="#about" class="nav-link active" data-section="about">
-                            <span>About</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#services" class="nav-link" data-section="services">
-                            <span>Services</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#works" class="nav-link" data-section="works">
-                            <span>Works</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#resume" class="nav-link" data-section="resume">
-                            <span>Resume</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#skills" class="nav-link" data-section="skills">
-                            <span>Skills</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#testimonials" class="nav-link" data-section="testimonials">
-                            <span>Testimonials</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#contact" class="nav-link" data-section="contact">
-                            <span>Contact</span>
-                        </a>
-                    </li>
-                </ul>
+                <ul class="nav-list" id="navList"></ul>
             </nav>
         </aside>
 
@@ -364,178 +299,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['api']) && $_GET['api'] 
             <div class="matrix-rain"></div>
             <div class="floating-code"></div>
             <div class="cyber-particles"></div>
-            <div class="content-wrapper">
-                <section class="section about-section" id="about">
-                    <div class="about-content">
-                        <div class="about-left">
-                            <div class="about-image-container">
-                                <img alt="About Image" class="about-image" id="aboutImage">
-                            </div>
-                            <div class="about-actions">
-                                <button class="action-btn like-btn" id="likeBtn" data-liked="<?php echo $has_liked ? 'true' : 'false'; ?>">
-                                    <svg viewBox="0 0 24 24" fill="<?php echo $has_liked ? 'currentColor' : 'none'; ?>" stroke="currentColor">
-                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                                    </svg>
-                                    <span><?php echo $has_liked ? 'Liked' : 'Like'; ?></span>
-                                </button>
-                                <button class="action-btn comment-btn" id="commentBtn">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                                        <path d="M13 8H7"/>
-                                        <path d="M17 12H7"/>
-                                    </svg>
-                                    Leave Comment
-                                </button>
-                                <button class="action-btn cv-btn" id="cvBtn">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                        <polyline points="14,2 14,8 20,8"/>
-                                        <line x1="16" y1="13" x2="8" y2="13"/>
-                                        <line x1="16" y1="17" x2="8" y2="17"/>
-                                        <polyline points="10,9 9,9 8,9"/>
-                                    </svg>
-                                    My CV
-                                </button>
-                            </div>
-                        </div>
-                        <div class="about-right">
-                            <h2 id="aboutTitle">About Me</h2>
-                            <p id="aboutContent"></p>
-                        </div>
-                    </div>
-                    
-                    <div class="achievements-section">
-                        <h3>Achievements</h3>
-                        <div class="achievements-grid" id="achievementsGrid"></div>
-                    </div>
-                </section>
-
-                <section class="section" id="services">
-                    <h2 id="servicesTitle">Services</h2>
-                    <div class="services-grid">
-                    </div>
-                </section>
-
-                <section class="section" id="works">
-                    <h2 id="worksTitle">My Works</h2>
-                    <div class="works-container">
-                        <div class="works-filter" id="worksFilter">
-                            <button class="filter-btn active" data-filter="All">All</button>
-                            <button class="filter-btn" data-filter="CyberSecurity">CyberSecurity</button>
-                            <button class="filter-btn" data-filter="Tools">Tools</button>
-                            <button class="filter-btn" data-filter="DevSecOps">DevSecOps</button>
-                            <button class="filter-btn" data-filter="Cloud Security">Cloud Security</button>
-                            <button class="filter-btn" data-filter="Cloud Engineer">Cloud Engineer</button>
-                        </div>
-                        <div class="works-grid" id="worksGrid"></div>
-                    </div>
-                </section>
-
-                <section class="section" id="resume">
-                    <h2 id="resumeTitle">Resume</h2>
-                    <div class="resume-container">
-                        <div class="resume-filter" id="resumeFilter">
-                            <button class="resume-filter-btn active" data-filter="Work EXPERIENCE">Work Experience</button>
-                            <button class="resume-filter-btn" data-filter="CERTIFICATION">Certification</button>
-                            <button class="resume-filter-btn" data-filter="EDUCATION">Education</button>
-                            <button class="resume-filter-btn" data-filter="Activities">Activities</button>
-                        </div>
-                        <div class="resume-timeline" id="resumeTimeline"></div>
-                    </div>
-                </section>
-
-                <section class="section" id="skills">
-                    <h2 id="skillsTitle">Skills</h2>
-                    <div class="skills-container">
-                        <div class="skills-filter" id="skillsFilter">
-                            <button class="skills-filter-btn active" data-filter="Security Tools">Security Tools</button>
-                            <button class="skills-filter-btn" data-filter="Programming Languages">Languages</button>
-                            <button class="skills-filter-btn" data-filter="Specialties">Specialties</button>
-                            <button class="skills-filter-btn" data-filter="Platforms">Platforms</button>
-                            <button class="skills-filter-btn" data-filter="DevSecOps Tools">DevSecOps</button>
-                        </div>
-                        <div class="skills-grid" id="skillsGrid"></div>
-                    </div>
-                </section>
-
-                <section class="section" id="testimonials">
-                    <div class="testimonials-header">
-                        <h2 id="testimonialsTitle">What People Say</h2>
-                        <button class="testimonial-comment-btn" id="testimonialCommentBtn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                                <path d="M13 8H7"/>
-                                <path d="M17 12H7"/>
-                            </svg>
-                            Leave Comment
-                        </button>
-                    </div>
-                    <div class="testimonials-container" id="testimonialsContainer">
-                        <div class="loading-message">Loading testimonials...</div>
-                    </div>
-                </section>
-
-                <section class="section" id="contact">
-                    <h2 id="contactTitle">Contact</h2>
-                    <div class="contact-container">
-                        <div class="contact-grid">
-                            <div class="contact-info">
-                                <h3>Get In Touch</h3>
-                                <div class="contact-methods">
-                                    <div class="contact-method" id="phoneContact">
-                                        <div class="contact-icon">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-                                            </svg>
-                                        </div>
-                                        <div class="contact-details">
-                                            <div class="contact-label">Phone</div>
-                                            <div class="contact-value" id="phoneValue"></div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="contact-method" id="emailContact">
-                                        <div class="contact-icon">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                                                <polyline points="22,6 12,13 2,6"/>
-                                            </svg>
-                                        </div>
-                                        <div class="contact-details">
-                                            <div class="contact-label">Email</div>
-                                            <div class="contact-value" id="emailValue"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="contact-social">
-                                <h3>Connect With Me</h3>
-                                <div class="contact-social-links" id="contactSocialLinks"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="contact-cta">
-                            <h3>Let's Work Together</h3>
-                            <div class="contact-cta-buttons">
-                                <a href="#" class="contact-cta-btn" id="callBtn">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-                                    </svg>
-                                    Call Now
-                                </a>
-                                <a href="#" class="contact-cta-btn" id="emailBtn">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                                        <polyline points="22,6 12,13 2,6"/>
-                                    </svg>
-                                    Send Email
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </div>
+            <div class="content-wrapper" id="contentWrapper"></div>
         </main>
         
         <div class="modal" id="commentModal">

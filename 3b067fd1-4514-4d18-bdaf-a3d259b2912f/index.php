@@ -14,12 +14,86 @@ function decryptData($data, $key) {
     return openssl_decrypt($encrypted, 'AES-256-CBC', $key, 0, $iv);
 }
 
+function extractCssColors($cssContent) {
+    $colors = [];
+    preg_match_all('/--([^:]+):\s*([^;]+);/', $cssContent, $matches, PREG_SET_ORDER);
+    
+    foreach ($matches as $match) {
+        $varName = trim($match[1]);
+        $value = trim($match[2]);
+        $colors[$varName] = $value;
+    }
+    
+    return $colors;
+}
+
+function updateCssWithColors($originalCss, $colorsArray) {
+    $updatedCss = $originalCss;
+    
+    foreach ($colorsArray as $varName => $value) {
+        $pattern = '/--' . preg_quote($varName, '/') . ':\s*[^;]+;/';
+        $replacement = '--' . $varName . ': ' . $value . ';';
+        $updatedCss = preg_replace($pattern, $replacement, $updatedCss);
+    }
+    
+    return $updatedCss;
+}
+
+function parseColorsInput($input) {
+    $colors = [];
+    $lines = explode("\n", $input);
+    
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if (empty($line) || strpos($line, ':') === false) continue;
+        
+        list($varName, $value) = explode(':', $line, 2);
+        $varName = trim(str_replace('--', '', $varName));
+        $value = trim($value);
+        $colors[$varName] = $value;
+    }
+    
+    return $colors;
+}
+
+function formatColorsOutput($colors) {
+    $output = '';
+    foreach ($colors as $varName => $value) {
+        $output .= "--{$varName}: {$value}\n";
+    }
+    return $output;
+}
+
 $jsonDir = __DIR__ . '/../json/b6cc0e64362e8606bb1a8d25e7d6ad5507634c04896d02c93b69d0edcc9ce41e/';
 $contentFile = $jsonDir . 'content.json';
 $authFile = $jsonDir . 'auth.json';
 
+$backupDir = __DIR__ . '/../temp/backup/';
+$templateDir = __DIR__ . '/../temp/template/';
+$backupJsonFile = $backupDir . 'json/content.json';
+$templateJsonFile = $templateDir . 'json/content.json';
+$backupCssFile = $backupDir . 'css/main.css';
+$templateCssFile = $templateDir . 'css/main.css';
+$mainCssFile = __DIR__ . '/../assets/css/main.css';
+
 if (!is_dir($jsonDir)) {
     mkdir($jsonDir, 0755, true);
+}
+
+if (!is_dir($backupDir . 'json/')) {
+    mkdir($backupDir . 'json/', 0755, true);
+}
+
+if (!is_dir($backupDir . 'css/')) {
+    mkdir($backupDir . 'css/', 0755, true);
+}
+
+if (!is_dir($templateDir . 'json/')) {
+    mkdir($templateDir . 'json/', 0755, true);
+}
+
+if (!is_dir($templateDir . 'css/')) {
+    mkdir($templateDir . 'css/', 0755, true);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -96,6 +170,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 json_decode($data);
                 if (json_last_error() === JSON_ERROR_NONE) {
+                    if (file_exists($contentFile)) {
+                        copy($contentFile, $backupJsonFile);
+                    }
                     file_put_contents($contentFile, $data);
                     echo json_encode(['success' => true]);
                 } else {
@@ -106,6 +183,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } else {
             echo json_encode(['success' => false, 'error' => 'No data provided']);
+        }
+        exit;
+    }
+    
+    if ($action === 'load_backup_json' && isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
+        if (file_exists($backupJsonFile)) {
+            $content = file_get_contents($backupJsonFile);
+            echo json_encode(['success' => true, 'content' => $content]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'No backup found']);
+        }
+        exit;
+    }
+    
+    if ($action === 'load_template_json' && isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
+        if (file_exists($templateJsonFile)) {
+            $content = file_get_contents($templateJsonFile);
+            echo json_encode(['success' => true, 'content' => $content]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'No template found']);
+        }
+        exit;
+    }
+    
+    if ($action === 'load_current_colors' && isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
+        if (file_exists($mainCssFile)) {
+            $cssContent = file_get_contents($mainCssFile);
+            $colors = extractCssColors($cssContent);
+            $formattedColors = formatColorsOutput($colors);
+            echo json_encode(['success' => true, 'content' => $formattedColors]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'CSS file not found']);
+        }
+        exit;
+    }
+    
+    if ($action === 'update_colors' && isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
+        $data = $_POST['data'] ?? '';
+        if ($data) {
+            try {
+                if (file_exists($mainCssFile)) {
+                    copy($mainCssFile, $backupCssFile);
+                    
+                    $originalCss = file_get_contents($mainCssFile);
+                    $newColors = parseColorsInput($data);
+                    $updatedCss = updateCssWithColors($originalCss, $newColors);
+                    
+                    file_put_contents($mainCssFile, $updatedCss);
+                    echo json_encode(['success' => true]);
+                } else {
+                    echo json_encode(['success' => false, 'error' => 'CSS file not found']);
+                }
+            } catch (Exception $e) {
+                echo json_encode(['success' => false, 'error' => 'Error updating colors']);
+            }
+        } else {
+            echo json_encode(['success' => false, 'error' => 'No colors data provided']);
+        }
+        exit;
+    }
+    
+    if ($action === 'load_backup_colors' && isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
+        if (file_exists($backupCssFile)) {
+            $cssContent = file_get_contents($backupCssFile);
+            $colors = extractCssColors($cssContent);
+            $formattedColors = formatColorsOutput($colors);
+            echo json_encode(['success' => true, 'content' => $formattedColors]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'No CSS backup found']);
+        }
+        exit;
+    }
+    
+    if ($action === 'load_template_colors' && isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
+        if (file_exists($templateCssFile)) {
+            $cssContent = file_get_contents($templateCssFile);
+            $colors = extractCssColors($cssContent);
+            $formattedColors = formatColorsOutput($colors);
+            echo json_encode(['success' => true, 'content' => $formattedColors]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'No CSS template found']);
         }
         exit;
     }
@@ -356,7 +514,7 @@ if (file_exists($contentFile)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portfolio Admin Panel</title>
+    <title>Portfolio CMS</title>
     <link rel="stylesheet" href="../assets/css/main.css">
     <link rel="stylesheet" href="../assets/css/platform.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -368,7 +526,7 @@ if (file_exists($contentFile)) {
     <div class="panel-container">
         <?php if ($isAuthenticated): ?>
         <div class="panel-header">
-            <h1>Portfolio Admin Panel</h1>
+            <h1>Portfolio CMS</h1>
             <div class="panel-actions">
                 <button onclick="goToPortfolio()" class="action-btn portfolio-btn">Portfolio</button>
                 <button onclick="openModal('resetPassword')" class="action-btn">Reset Password</button>
@@ -394,6 +552,10 @@ if (file_exists($contentFile)) {
                     <h3>Upload CV</h3>
                     <p>Upload and update CV file</p>
                 </div>
+                <div class="dashboard-card" onclick="loadCurrentColors(); openModal('colors');">
+                    <h3>Update Colors</h3>
+                    <p>Edit theme colors and variables</p>
+                </div>
             </div>
         </div>
         <?php endif; ?>
@@ -418,8 +580,31 @@ if (file_exists($contentFile)) {
                 <textarea id="contentData" placeholder="JSON content data..."><?php echo htmlspecialchars($currentData); ?></textarea>
                 <div class="modal-actions">
                     <button onclick="updateContent()" class="modal-btn">Update Content</button>
+                    <button onclick="loadBackupContent()" class="modal-btn secondary">Load Backup</button>
+                    <button onclick="loadTemplateContent()" class="modal-btn secondary">Load Template</button>
                     <button onclick="formatJSON()" class="modal-btn secondary">Format JSON</button>
                     <button onclick="validateJSON()" class="modal-btn secondary">Validate JSON</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="colorsModal" class="modal">
+        <div class="modal-content large-modal">
+            <div class="modal-header">
+                <h2>Update Colors</h2>
+                <span class="modal-close" onclick="closeModal('colors')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="theme-note">
+                    <p><strong>Note:</strong> After updating colors, press <kbd>Ctrl + F5</kbd> to clear cache and see changes.</p>
+                    <p><strong>Instructions:</strong> Only edit the color values on the right side. Do not change variable names.</p>
+                </div>
+                <div id="colorEditor" class="color-editor"></div>
+                <div class="modal-actions">
+                    <button onclick="updateColors()" class="modal-btn">Update Colors</button>
+                    <button onclick="loadBackupColors()" class="modal-btn secondary">Load Backup</button>
+                    <button onclick="loadTemplateColors()" class="modal-btn secondary">Load Template</button>
                 </div>
             </div>
         </div>

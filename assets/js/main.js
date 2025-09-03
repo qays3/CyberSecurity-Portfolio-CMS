@@ -1,22 +1,146 @@
+function loadTestimonials() {
+    fetch('/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'action=get_comments'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayTestimonials(data.comments);
+        }
+    })
+    .catch(error => console.error('Error loading testimonials:', error));
+}
+
+function displayTestimonials(comments) {
+    const testimonialsContainer = document.getElementById('testimonialsContainer');
+    if (!testimonialsContainer) return;
+    
+    if (comments.length === 0) {
+        testimonialsContainer.innerHTML = '<div class="no-testimonials">No testimonials yet. Be the first to share your thoughts!</div>';
+        return;
+    }
+    
+    const testimonialsHTML = `
+        <div class="auto-play-toggle" id="autoPlayToggle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <polygon points="5,3 19,12 5,21"/>
+            </svg>
+            Auto
+        </div>
+        <div class="testimonials-slider" id="testimonialsSlider">
+            ${comments.map(comment => {
+                const stars = '★'.repeat(comment.rating) + '☆'.repeat(5 - comment.rating);
+                const firstLetter = comment.name.charAt(0).toUpperCase();
+                const formattedDate = formatDate(comment.timestamp);
+                
+                return `
+                    <div class="testimonial-card">
+                        <div class="testimonial-rating">${stars}</div>
+                        <div class="testimonial-message">"${comment.message}"</div>
+                        <div class="testimonial-author">
+                            <div class="author-avatar">${firstLetter}</div>
+                            <div class="author-info">
+                                <div class="author-name">${comment.name}</div>
+                                <div class="author-date">${formattedDate}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+        <div class="slider-controls">
+            <div class="slider-navigation">
+                <button class="slider-btn" id="prevBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <div class="slider-indicators" id="sliderIndicators"></div>
+                <button class="slider-btn" id="nextBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="slider-info">
+                <span id="currentSlide">1</span> / <span id="totalSlides">${comments.length}</span>
+            </div>
+        </div>
+    `;
+    
+    testimonialsContainer.innerHTML = testimonialsHTML;
+    initializeSlider();
+}
+
+function formatDate(timestamp) {
+    const date = new Date(timestamp * 1000);
+    const now = new Date();
+    const diff = now - date;
+    
+    if (diff < 60000) return 'Just now';
+    if (diff < 3600000) return Math.floor(diff / 60000) + ' minutes ago';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + ' hours ago';
+    return Math.floor(diff / 86400000) + ' days ago';
+}
+
+window.loadTestimonials = loadTestimonials;
+window.handleLike = function() {
+    const likeBtn = document.getElementById('likeBtn');
+    if (likeBtn && likeBtn.getAttribute('data-liked') === 'true') {
+        return;
+    }
+
+    fetch('/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'action=like'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && likeBtn) {
+            likeBtn.setAttribute('data-liked', 'true');
+            likeBtn.classList.add('liked');
+            const svg = likeBtn.querySelector('svg');
+            const span = likeBtn.querySelector('span');
+            if (svg) svg.setAttribute('fill', 'currentColor');
+            if (span) span.textContent = 'Liked';
+            
+            const likeCount = document.getElementById('likeCount');
+            if (likeCount) likeCount.textContent = data.likes;
+            
+            showHeartAnimation();
+        }
+    })
+    .catch(error => console.error('Error liking:', error));
+};
+
+window.openModal = function() {
+    const commentModal = document.getElementById('commentModal');
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    if (commentModal && modalBackdrop) {
+        commentModal.classList.add('active');
+        modalBackdrop.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.getElementById('sidebar');
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebarToggleMobile = document.getElementById('sidebarToggleMobile');
     const mainContent = document.getElementById('mainContent');
-    const navLinks = document.querySelectorAll('.nav-link');
-    const sections = document.querySelectorAll('.section');
-    const likeBtn = document.getElementById('likeBtn');
-    const visitorCount = document.getElementById('visitorCount');
-    const likeCount = document.getElementById('likeCount');
-    const commentBtn = document.getElementById('commentBtn');
-    const testimonialCommentBtn = document.getElementById('testimonialCommentBtn');
     const commentModal = document.getElementById('commentModal');
     const modalBackdrop = document.getElementById('modalBackdrop');
     const modalClose = document.getElementById('modalClose');
     const cancelBtn = document.getElementById('cancelBtn');
     const commentForm = document.getElementById('commentForm');
     const starRating = document.getElementById('starRating');
-    const testimonialsContainer = document.getElementById('testimonialsContainer');
 
     let sidebarOpen = window.innerWidth > 768;
     let selectedRating = 0;
@@ -61,6 +185,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateActiveSection() {
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         let currentSection = '';
+        const sections = document.querySelectorAll('.section');
+        const navLinks = document.querySelectorAll('.nav-link');
         
         sections.forEach(section => {
             const sectionTop = section.offsetTop;
@@ -92,6 +218,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 behavior: 'smooth'
             });
             
+            const navLinks = document.querySelectorAll('.nav-link');
             navLinks.forEach(link => {
                 link.classList.remove('active');
                 if (link.getAttribute('data-section') === targetSection) {
@@ -124,6 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function setupNavigation() {
+        const navLinks = document.querySelectorAll('.nav-link');
         navLinks.forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -135,6 +263,51 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
+    }
+
+    function setupEventListeners() {
+        setTimeout(() => {
+            const likeBtn = document.getElementById('likeBtn');
+            const cvBtn = document.getElementById('cvBtn');
+            const commentBtn = document.getElementById('commentBtn');
+            const testimonialCommentBtn = document.getElementById('testimonialCommentBtn');
+            const resumeBtn = document.getElementById('resumeBtn');
+            
+            if (likeBtn) {
+                likeBtn.addEventListener('click', window.handleLike);
+            }
+            
+            if (cvBtn) {
+                cvBtn.addEventListener('click', function() {
+                    const userData = window.portfolioData?.userData || {};
+                    const personal = userData.personal || {};
+                    if (personal.cv) {
+                        window.open(personal.cv, '_blank');
+                    }
+                });
+            }
+            
+            if (commentBtn) {
+                commentBtn.addEventListener('click', window.openModal);
+            }
+            
+            if (testimonialCommentBtn) {
+                testimonialCommentBtn.addEventListener('click', window.openModal);
+            }
+            
+            if (resumeBtn) {
+                resumeBtn.addEventListener('click', function() {
+                    const userData = window.portfolioData?.userData || {};
+                    const personal = userData.personal || {};
+                    if (personal.cv) {
+                        window.open(personal.cv, '_blank');
+                    }
+                });
+            }
+            
+            setupFilters();
+            setupResumeEventListeners();
+        }, 500);
     }
 
     function setupFilters() {
@@ -214,31 +387,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             });
         }
-
-        setTimeout(() => {
-            const resumeItems = document.querySelectorAll('.resume-item');
-            resumeItems.forEach(item => {
-                item.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    
-                    const itemData = getResumeItemData(this);
-                    if (itemData && itemData.link) {
-                        window.open(itemData.link, '_blank');
-                    } else {
-                        this.classList.toggle('expanded');
-                    }
-                });
-            });
-        }, 1000);
     }
 
-    function getResumeItemData(element) {
-        const userData = portfolioData.userData || {};
-        const resume = userData.resume || [];
-        const type = element.getAttribute('data-type');
-        const title = element.querySelector('.resume-title')?.textContent;
-        
-        return resume.find(item => item.type === type && item.title === title);
+    function setupResumeEventListeners() {
+        const resumeItems = document.querySelectorAll('.resume-item');
+        resumeItems.forEach(item => {
+            const openBtn = item.querySelector('.resume-open-btn');
+            if (openBtn) {
+                openBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const url = this.dataset.url;
+                    if (url) {
+                        window.open(url, '_blank');
+                    }
+                });
+            }
+            
+            const resumeContent = item.querySelector('.resume-content');
+            if (resumeContent) {
+                resumeContent.addEventListener('click', function(e) {
+                    if (e.target.closest('.resume-open-btn')) {
+                        return;
+                    }
+                    
+                    e.stopPropagation();
+                    e.preventDefault();
+                    item.classList.toggle('expanded');
+                });
+            }
+        });
     }
 
     function updateStats() {
@@ -251,6 +429,10 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
+            const visitorCount = document.getElementById('visitorCount');
+            const likeCount = document.getElementById('likeCount');
+            const likeBtn = document.getElementById('likeBtn');
+            
             if (visitorCount) visitorCount.textContent = data.visitors;
             if (likeCount) likeCount.textContent = data.likes;
             
@@ -266,35 +448,6 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => console.error('Error updating stats:', error));
     }
 
-    function handleLike() {
-        if (likeBtn && likeBtn.getAttribute('data-liked') === 'true') {
-            return;
-        }
-
-        fetch('/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: 'action=like'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && likeBtn) {
-                likeBtn.setAttribute('data-liked', 'true');
-                likeBtn.classList.add('liked');
-                const svg = likeBtn.querySelector('svg');
-                const span = likeBtn.querySelector('span');
-                if (svg) svg.setAttribute('fill', 'currentColor');
-                if (span) span.textContent = 'Liked';
-                if (likeCount) likeCount.textContent = data.likes;
-                
-                showHeartAnimation();
-            }
-        })
-        .catch(error => console.error('Error liking:', error));
-    }
-
     function showHeartAnimation() {
         const heart = document.createElement('div');
         heart.className = 'cyber-heart';
@@ -306,14 +459,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.body.removeChild(heart);
             }
         }, 2000);
-    }
-
-    function openModal() {
-        if (commentModal && modalBackdrop) {
-            commentModal.classList.add('active');
-            modalBackdrop.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
     }
 
     function closeModal() {
@@ -331,14 +476,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function setupModalSystem() {
-        if (commentBtn) {
-            commentBtn.addEventListener('click', openModal);
-        }
-
-        if (testimonialCommentBtn) {
-            testimonialCommentBtn.addEventListener('click', openModal);
-        }
-
         if (modalClose) {
             modalClose.addEventListener('click', closeModal);
         }
@@ -443,83 +580,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 submitBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9 22,2"/></svg>Submit Comment';
             }
         });
-    }
-
-    function loadTestimonials() {
-        fetch('/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: 'action=get_comments'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                displayTestimonials(data.comments);
-            }
-        })
-        .catch(error => console.error('Error loading testimonials:', error));
-    }
-
-    function displayTestimonials(comments) {
-        if (!testimonialsContainer) return;
-        
-        if (comments.length === 0) {
-            testimonialsContainer.innerHTML = '<div class="no-testimonials">No testimonials yet. Be the first to share your thoughts!</div>';
-            return;
-        }
-        
-        const testimonialsHTML = `
-            <div class="auto-play-toggle" id="autoPlayToggle">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <polygon points="5,3 19,12 5,21"/>
-                </svg>
-                Auto
-            </div>
-            <div class="testimonials-slider" id="testimonialsSlider">
-                ${comments.map(comment => {
-                    const stars = '★'.repeat(comment.rating) + '☆'.repeat(5 - comment.rating);
-                    const firstLetter = comment.name.charAt(0).toUpperCase();
-                    const formattedDate = formatDate(comment.timestamp);
-                    
-                    return `
-                        <div class="testimonial-card">
-                            <div class="testimonial-rating">${stars}</div>
-                            <div class="testimonial-message">"${comment.message}"</div>
-                            <div class="testimonial-author">
-                                <div class="author-avatar">${firstLetter}</div>
-                                <div class="author-info">
-                                    <div class="author-name">${comment.name}</div>
-                                    <div class="author-date">${formattedDate}</div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-            <div class="slider-controls">
-                <div class="slider-navigation">
-                    <button class="slider-btn" id="prevBtn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </button>
-                    <div class="slider-indicators" id="sliderIndicators"></div>
-                    <button class="slider-btn" id="nextBtn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                            <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </button>
-                </div>
-                <div class="slider-info">
-                    <span id="currentSlide">1</span> / <span id="totalSlides">${comments.length}</span>
-                </div>
-            </div>
-        `;
-        
-        testimonialsContainer.innerHTML = testimonialsHTML;
-        initializeSlider();
     }
 
     function initializeSlider() {
@@ -716,6 +776,7 @@ document.addEventListener('DOMContentLoaded', function() {
             startAutoPlay();
         }
         
+        const testimonialsContainer = document.getElementById('testimonialsContainer');
         if (testimonialsContainer) {
             testimonialsContainer.addEventListener('mouseenter', () => {
                 if (isAutoPlaying) {
@@ -729,17 +790,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
-    }
-
-    function formatDate(timestamp) {
-        const date = new Date(timestamp * 1000);
-        const now = new Date();
-        const diff = now - date;
-        
-        if (diff < 60000) return 'Just now';
-        if (diff < 3600000) return Math.floor(diff / 60000) + ' minutes ago';
-        if (diff < 86400000) return Math.floor(diff / 3600000) + ' hours ago';
-        return Math.floor(diff / 86400000) + ' days ago';
     }
 
     function showNotification(message, type) {
@@ -769,14 +819,14 @@ document.addEventListener('DOMContentLoaded', function() {
         setInterval(updateStats, 30000);
         setupModalSystem();
         setupStarRating();
-        setupFilters();
-        loadTestimonials();
-        setupNavigation();
         handleResize();
         updateActiveSection();
         updateSidebarTogglePosition();
         
         setTimeout(() => {
+            setupNavigation();
+            setupEventListeners();
+            
             const resumeFilterButtons = document.querySelectorAll('.resume-filter-btn');
             const workExperienceBtn = Array.from(resumeFilterButtons).find(btn => 
                 btn.getAttribute('data-filter') === 'Work EXPERIENCE'
@@ -787,7 +837,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 workExperienceBtn.classList.add('active');
                 workExperienceBtn.click();
             }
-        }, 1500);
+        }, 1000);
     }
 
     if (sidebarToggle) {
@@ -796,10 +846,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (sidebarToggleMobile) {
         sidebarToggleMobile.addEventListener('click', toggleSidebar);
-    }
-
-    if (likeBtn) {
-        likeBtn.addEventListener('click', handleLike);
     }
 
     if (commentForm) {
@@ -819,5 +865,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    window.addEventListener('portfolioLoaded', function() {
+        setTimeout(() => {
+            initializeAll();
+            loadTestimonials();
+        }, 100);
+    });
+
     initializeAll();
+    
+    setTimeout(() => {
+        loadTestimonials();
+    }, 1000);
 });

@@ -205,9 +205,230 @@ async function updateContent() {
         
         if (result.success) {
             showMessageModal('Success', 'Content updated successfully');
-            setTimeout(() => closeModal('content'), 2000);
         } else {
             showMessageModal('Error', result.error || 'Update failed');
+        }
+    } catch (error) {
+        showMessageModal('Error', 'Connection error');
+    }
+}
+
+async function loadBackupContent() {
+    try {
+        const formData = new FormData();
+        formData.append('action', 'load_backup_json');
+        
+        const response = await fetch('', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            document.getElementById('contentData').value = result.content;
+            showMessageModal('Success', 'Backup content loaded successfully');
+        } else {
+            showMessageModal('Error', result.error || 'Failed to load backup');
+        }
+    } catch (error) {
+        showMessageModal('Error', 'Connection error');
+    }
+}
+
+async function loadTemplateContent() {
+    try {
+        const formData = new FormData();
+        formData.append('action', 'load_template_json');
+        
+        const response = await fetch('', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            document.getElementById('contentData').value = result.content;
+            showMessageModal('Success', 'Template content loaded successfully');
+        } else {
+            showMessageModal('Error', result.error || 'Failed to load template');
+        }
+    } catch (error) {
+        showMessageModal('Error', 'Connection error');
+    }
+}
+
+async function loadCurrentColors() {
+    try {
+        const formData = new FormData();
+        formData.append('action', 'load_current_colors');
+        
+        const response = await fetch('', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            createColorEditor(result.content);
+        } else {
+            showMessageModal('Error', result.error || 'Failed to load current colors');
+        }
+    } catch (error) {
+        showMessageModal('Error', 'Connection error');
+    }
+}
+
+function convertToHex(color) {
+    if (!color) return '#000000';
+    
+    color = color.trim();
+    
+    if (color.startsWith('#')) {
+        return color.length === 7 ? color : color + '000000'.slice(color.length - 1);
+    }
+    
+    if (color.startsWith('rgb')) {
+        const values = color.match(/\d+/g);
+        if (values && values.length >= 3) {
+            const r = parseInt(values[0]).toString(16).padStart(2, '0');
+            const g = parseInt(values[1]).toString(16).padStart(2, '0');
+            const b = parseInt(values[2]).toString(16).padStart(2, '0');
+            return `#${r}${g}${b}`;
+        }
+    }
+    
+    const namedColors = {
+        'white': '#ffffff',
+        'black': '#000000',
+        'red': '#ff0000',
+        'green': '#008000',
+        'blue': '#0000ff',
+        'yellow': '#ffff00',
+        'cyan': '#00ffff',
+        'magenta': '#ff00ff',
+        'transparent': '#000000'
+    };
+    
+    return namedColors[color.toLowerCase()] || '#000000';
+}
+
+function createColorEditor(colorsText) {
+    const colorEditor = document.getElementById('colorEditor');
+    colorEditor.innerHTML = '';
+    
+    const lines = colorsText.split('\n').filter(line => line.trim());
+    
+    lines.forEach(line => {
+        const [varName, value] = line.split(':').map(s => s.trim());
+        if (varName && value) {
+            const colorRow = document.createElement('div');
+            colorRow.className = 'color-row';
+            
+            const cleanVarName = varName.replace('--', '');
+            
+            colorRow.innerHTML = `
+                <span class="color-label">--${cleanVarName}:</span>
+                <input type="text" class="color-input" data-var="${cleanVarName}" value="${value}" placeholder="${value}">
+                <div class="color-preview" style="background-color: ${value}"></div>
+            `;
+            
+            colorEditor.appendChild(colorRow);
+            
+            const input = colorRow.querySelector('.color-input');
+            const preview = colorRow.querySelector('.color-preview');
+            
+            input.addEventListener('input', function() {
+                const newValue = this.value.trim();
+                if (newValue) {
+                    preview.style.backgroundColor = newValue;
+                }
+            });
+        }
+    });
+}
+
+async function updateColors() {
+    const colorInputs = document.querySelectorAll('.color-input');
+    let colorsData = '';
+    
+    colorInputs.forEach(input => {
+        const varName = input.dataset.var;
+        const value = input.value.trim();
+        if (varName && value) {
+            colorsData += `--${varName}: ${value}\n`;
+        }
+    });
+    
+    if (!colorsData.trim()) {
+        showMessageModal('Error', 'No color data to update');
+        return;
+    }
+    
+    try {
+        const formData = new FormData();
+        formData.append('action', 'update_colors');
+        formData.append('data', colorsData);
+        
+        const response = await fetch('', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showMessageModal('Success', 'Colors updated successfully. Press Ctrl + F5 to clear cache and see changes.');
+        } else {
+            showMessageModal('Error', result.error || 'Colors update failed');
+        }
+    } catch (error) {
+        showMessageModal('Error', 'Connection error');
+    }
+}
+
+async function loadBackupColors() {
+    try {
+        const formData = new FormData();
+        formData.append('action', 'load_backup_colors');
+        
+        const response = await fetch('', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            createColorEditor(result.content);
+            showMessageModal('Success', 'Backup colors loaded successfully');
+        } else {
+            showMessageModal('Error', result.error || 'Failed to load backup colors');
+        }
+    } catch (error) {
+        showMessageModal('Error', 'Connection error');
+    }
+}
+
+async function loadTemplateColors() {
+    try {
+        const formData = new FormData();
+        formData.append('action', 'load_template_colors');
+        
+        const response = await fetch('', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            createColorEditor(result.content);
+            showMessageModal('Success', 'Template colors loaded successfully');
+        } else {
+            showMessageModal('Error', result.error || 'Failed to load template colors');
         }
     } catch (error) {
         showMessageModal('Error', 'Connection error');
@@ -476,6 +697,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 openModal('uploadProfile');
             } else if (cardText.includes('upload cv')) {
                 openModal('uploadCV');
+            } else if (cardText.includes('colors')) {
+                loadCurrentColors();
+                openModal('colors');
             }
         });
     });
