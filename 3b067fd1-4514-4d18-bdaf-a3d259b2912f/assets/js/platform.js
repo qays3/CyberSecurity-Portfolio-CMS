@@ -23,15 +23,33 @@ async function authenticate() {
         return;
     }
     
+    const modalTitle = document.querySelector('#authModal h2').textContent;
+    const isFirstTime = modalTitle.includes('Set Admin Password');
+    
+    if (isFirstTime) {
+        if (password.length < 8) {
+            showError(errorDiv, 'Password must be at least 8 characters long');
+            return;
+        }
+        if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+            showError(errorDiv, 'Password must contain at least one lowercase letter, one uppercase letter, and one number');
+            return;
+        }
+    }
+    
     try {
         const formData = new FormData();
-        formData.append('action', window.isFirstTime ? 'setup' : 'auth');
+        formData.append('action', isFirstTime ? 'setup' : 'auth');
         formData.append('password', password);
         
-        const response = await fetch('', {
+        const response = await fetch(window.location.href, {
             method: 'POST',
             body: formData
         });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
         const result = await response.json();
         
@@ -41,7 +59,8 @@ async function authenticate() {
             showError(errorDiv, result.error || 'Authentication failed');
         }
     } catch (error) {
-        showError(errorDiv, 'Connection error');
+        console.error('Auth error:', error);
+        showError(errorDiv, 'Connection error: ' + error.message);
     }
 }
 

@@ -97,12 +97,21 @@ if (!is_dir($templateDir . 'css/')) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    ob_clean();
     header('Content-Type: application/json');
     $action = $_POST['action'] ?? '';
     
     if ($action === 'setup') {
         if (!file_exists($authFile) || filesize($authFile) == 0) {
             $password = $_POST['password'] ?? '';
+            if (strlen($password) < 8) {
+                echo json_encode(['success' => false, 'error' => 'Password must be at least 8 characters long']);
+                exit;
+            }
+            if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/', $password)) {
+                echo json_encode(['success' => false, 'error' => 'Password must contain at least one lowercase letter, one uppercase letter, and one number']);
+                exit;
+            }
             if ($password) {
                 $authData = [
                     'password' => password_hash($password, PASSWORD_DEFAULT),
@@ -124,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($action === 'auth') {
         $inputPassword = $_POST['password'] ?? '';
-        if (file_exists($authFile) && $inputPassword) {
+        if (file_exists($authFile) && filesize($authFile) > 0 && $inputPassword) {
             try {
                 $encryptedAuth = file_get_contents($authFile);
                 $decryptedAuth = decryptData($encryptedAuth, $inputPassword);
@@ -721,9 +730,7 @@ if (file_exists($contentFile)) {
         </div>
     </div>
 
-    <script>
-        window.isFirstTime = <?php echo $isFirstTime ? 'true' : 'false'; ?>;
-    </script>
+
     <script src="assets/js/platform.js"></script>
     <script src="../assets/js/cursor.js"></script>
 </body>
