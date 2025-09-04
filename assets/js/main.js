@@ -54,13 +54,13 @@ function displayTestimonials(comments) {
         </div>
         <div class="slider-controls">
             <div class="slider-navigation">
-                <button class="slider-btn" id="prevBtn">
+                <button class="slider-btn" id="prevBtn" type="button">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </button>
                 <div class="slider-indicators" id="sliderIndicators"></div>
-                <button class="slider-btn" id="nextBtn">
+                <button class="slider-btn" id="nextBtn" type="button">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
@@ -88,6 +88,7 @@ function formatDate(timestamp) {
 }
 
 window.loadTestimonials = loadTestimonials;
+
 window.handleLike = function() {
     const likeBtn = document.getElementById('likeBtn');
     if (likeBtn && likeBtn.getAttribute('data-liked') === 'true') {
@@ -130,6 +131,230 @@ window.openModal = function() {
     }
 };
 
+let currentSlideIndex = 0;
+let totalSlides = 0;
+let autoPlayInterval = null;
+let isAutoPlaying = false;
+
+function initializeSlider() {
+    const slider = document.getElementById('testimonialsSlider');
+    if (!slider) return;
+    
+    totalSlides = slider.children.length;
+    currentSlideIndex = 0;
+    
+    if (autoPlayInterval) {
+        clearInterval(autoPlayInterval);
+        autoPlayInterval = null;
+    }
+    
+    const sliderIndicators = document.getElementById('sliderIndicators');
+    if (sliderIndicators) {
+        sliderIndicators.innerHTML = '';
+        for (let i = 0; i < totalSlides; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'slider-dot';
+            if (i === 0) dot.classList.add('active');
+            dot.dataset.index = i;
+            sliderIndicators.appendChild(dot);
+        }
+    }
+    
+    function updateSlider() {
+        const translateX = -currentSlideIndex * 100;
+        slider.style.transform = `translateX(${translateX}%)`;
+        
+        const indicators = document.querySelectorAll('.slider-dot');
+        indicators.forEach((dot, index) => {
+            if (index === currentSlideIndex) {
+                dot.classList.add('active');
+            } else {
+                dot.classList.remove('active');
+            }
+        });
+        
+        const currentSlideSpan = document.getElementById('currentSlide');
+        if (currentSlideSpan) {
+            currentSlideSpan.textContent = currentSlideIndex + 1;
+        }
+    }
+    
+    function nextSlide() {
+        currentSlideIndex = (currentSlideIndex + 1) % totalSlides;
+        updateSlider();
+    }
+    
+    function prevSlide() {
+        currentSlideIndex = (currentSlideIndex - 1 + totalSlides) % totalSlides;
+        updateSlider();
+    }
+    
+    function goToSlide(index) {
+        currentSlideIndex = index;
+        updateSlider();
+    }
+    
+    function startAutoPlay() {
+        if (autoPlayInterval) {
+            clearInterval(autoPlayInterval);
+        }
+        isAutoPlaying = true;
+        autoPlayInterval = setInterval(nextSlide, 4000);
+        const autoPlayToggle = document.getElementById('autoPlayToggle');
+        if (autoPlayToggle) {
+            autoPlayToggle.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <rect x="6" y="4" width="4" height="16"/>
+                    <rect x="14" y="4" width="4" height="16"/>
+                </svg>
+                Auto
+            `;
+            autoPlayToggle.classList.add('active');
+        }
+    }
+    
+    function stopAutoPlay() {
+        isAutoPlaying = false;
+        if (autoPlayInterval) {
+            clearInterval(autoPlayInterval);
+            autoPlayInterval = null;
+        }
+        const autoPlayToggle = document.getElementById('autoPlayToggle');
+        if (autoPlayToggle) {
+            autoPlayToggle.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polygon points="5,3 19,12 5,21"/>
+                </svg>
+                Auto
+            `;
+            autoPlayToggle.classList.remove('active');
+        }
+    }
+    
+    function toggleAutoPlay() {
+        if (isAutoPlaying) {
+            stopAutoPlay();
+        } else {
+            startAutoPlay();
+        }
+    }
+    
+    setTimeout(() => {
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const autoPlayToggle = document.getElementById('autoPlayToggle');
+        const indicators = document.querySelectorAll('.slider-dot');
+        
+        if (prevBtn) {
+            prevBtn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                stopAutoPlay();
+                prevSlide();
+            };
+        }
+        
+        if (nextBtn) {
+            nextBtn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                stopAutoPlay();
+                nextSlide();
+            };
+        }
+        
+        if (autoPlayToggle) {
+            autoPlayToggle.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleAutoPlay();
+            };
+        }
+        
+        indicators.forEach((dot, index) => {
+            dot.onclick = function() {
+                stopAutoPlay();
+                goToSlide(index);
+            };
+        });
+        
+        let startX = 0;
+        let isDragging = false;
+        
+        slider.addEventListener('touchstart', function(e) {
+            startX = e.touches[0].clientX;
+            isDragging = true;
+            stopAutoPlay();
+        });
+        
+        slider.addEventListener('touchend', function(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            
+            const endX = e.changedTouches[0].clientX;
+            const diff = startX - endX;
+            
+            if (Math.abs(diff) > 50) {
+                if (diff > 0) {
+                    nextSlide();
+                } else {
+                    prevSlide();
+                }
+            }
+        });
+        
+        slider.addEventListener('mousedown', function(e) {
+            startX = e.clientX;
+            isDragging = true;
+            stopAutoPlay();
+            e.preventDefault();
+        });
+        
+        slider.addEventListener('mouseup', function(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            
+            const endX = e.clientX;
+            const diff = startX - endX;
+            
+            if (Math.abs(diff) > 50) {
+                if (diff > 0) {
+                    nextSlide();
+                } else {
+                    prevSlide();
+                }
+            }
+        });
+        
+        slider.addEventListener('mouseleave', function() {
+            isDragging = false;
+        });
+        
+        const testimonialsContainer = document.getElementById('testimonialsContainer');
+        if (testimonialsContainer) {
+            testimonialsContainer.addEventListener('mouseenter', function() {
+                if (isAutoPlaying && autoPlayInterval) {
+                    clearInterval(autoPlayInterval);
+                    autoPlayInterval = null;
+                }
+            });
+            
+            testimonialsContainer.addEventListener('mouseleave', function() {
+                if (isAutoPlaying && !autoPlayInterval) {
+                    autoPlayInterval = setInterval(nextSlide, 4000);
+                }
+            });
+        }
+        
+    }, 100);
+    
+    updateSlider();
+    
+    if (totalSlides > 1) {
+        setTimeout(startAutoPlay, 1000);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.getElementById('sidebar');
     const sidebarToggle = document.getElementById('sidebarToggle');
@@ -144,10 +369,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let sidebarOpen = window.innerWidth > 768;
     let selectedRating = 0;
-    let currentSlideIndex = 0;
-    let totalSlides = 0;
-    let autoPlayInterval;
-    let isAutoPlaying = false;
 
     function updateSidebarTogglePosition() {
         if (sidebarToggle) {
@@ -580,216 +801,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 submitBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9 22,2"/></svg>Submit Comment';
             }
         });
-    }
-
-    function initializeSlider() {
-        const slider = document.getElementById('testimonialsSlider');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        const autoPlayToggle = document.getElementById('autoPlayToggle');
-        const currentSlideSpan = document.getElementById('currentSlide');
-        const sliderIndicators = document.getElementById('sliderIndicators');
-        
-        if (!slider) return;
-        
-        totalSlides = slider.children.length;
-        currentSlideIndex = 0;
-        
-        if (sliderIndicators) {
-            sliderIndicators.innerHTML = '';
-            for (let i = 0; i < totalSlides; i++) {
-                const dot = document.createElement('div');
-                dot.className = 'slider-dot';
-                if (i === 0) dot.classList.add('active');
-                dot.addEventListener('click', () => {
-                    stopAutoPlay();
-                    goToSlide(i);
-                });
-                sliderIndicators.appendChild(dot);
-            }
-        }
-        
-        function updateSlider() {
-            const translateX = -currentSlideIndex * 100;
-            slider.style.transform = `translateX(${translateX}%)`;
-            
-            const indicators = document.querySelectorAll('.slider-dot');
-            indicators.forEach((dot, index) => {
-                dot.classList.toggle('active', index === currentSlideIndex);
-            });
-            
-            if (currentSlideSpan) {
-                currentSlideSpan.textContent = currentSlideIndex + 1;
-            }
-            
-            if (prevBtn) {
-                prevBtn.disabled = currentSlideIndex === 0;
-            }
-            if (nextBtn) {
-                nextBtn.disabled = currentSlideIndex === totalSlides - 1;
-            }
-        }
-        
-        function nextSlide() {
-            if (currentSlideIndex < totalSlides - 1) {
-                currentSlideIndex++;
-            } else {
-                currentSlideIndex = 0;
-            }
-            updateSlider();
-        }
-        
-        function prevSlide() {
-            if (currentSlideIndex > 0) {
-                currentSlideIndex--;
-            } else {
-                currentSlideIndex = totalSlides - 1;
-            }
-            updateSlider();
-        }
-        
-        function goToSlide(index) {
-            currentSlideIndex = index;
-            updateSlider();
-        }
-        
-        function startAutoPlay() {
-            isAutoPlaying = true;
-            autoPlayInterval = setInterval(nextSlide, 4000);
-            if (autoPlayToggle) {
-                autoPlayToggle.innerHTML = `
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <rect x="6" y="4" width="4" height="16"/>
-                        <rect x="14" y="4" width="4" height="16"/>
-                    </svg>
-                    Auto
-                `;
-            }
-        }
-        
-        function stopAutoPlay() {
-            isAutoPlaying = false;
-            clearInterval(autoPlayInterval);
-            if (autoPlayToggle) {
-                autoPlayToggle.innerHTML = `
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <polygon points="5,3 19,12 5,21"/>
-                    </svg>
-                    Auto
-                `;
-            }
-        }
-        
-        function toggleAutoPlay() {
-            if (isAutoPlaying) {
-                stopAutoPlay();
-            } else {
-                startAutoPlay();
-            }
-        }
-        
-        if (prevBtn) {
-            prevBtn.addEventListener('click', () => {
-                stopAutoPlay();
-                prevSlide();
-            });
-        }
-        
-        if (nextBtn) {
-            nextBtn.addEventListener('click', () => {
-                stopAutoPlay();
-                nextSlide();
-            });
-        }
-        
-        if (autoPlayToggle) {
-            autoPlayToggle.addEventListener('click', toggleAutoPlay);
-        }
-        
-        let startX = 0;
-        let isDragging = false;
-        
-        if (slider) {
-            slider.addEventListener('touchstart', (e) => {
-                startX = e.touches[0].clientX;
-                isDragging = true;
-                stopAutoPlay();
-            });
-            
-            slider.addEventListener('touchmove', (e) => {
-                if (!isDragging) return;
-                e.preventDefault();
-            });
-            
-            slider.addEventListener('touchend', (e) => {
-                if (!isDragging) return;
-                isDragging = false;
-                
-                const endX = e.changedTouches[0].clientX;
-                const diff = startX - endX;
-                
-                if (Math.abs(diff) > 50) {
-                    if (diff > 0) {
-                        nextSlide();
-                    } else {
-                        prevSlide();
-                    }
-                }
-            });
-            
-            slider.addEventListener('mousedown', (e) => {
-                startX = e.clientX;
-                isDragging = true;
-                stopAutoPlay();
-                e.preventDefault();
-            });
-            
-            slider.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                e.preventDefault();
-            });
-            
-            slider.addEventListener('mouseup', (e) => {
-                if (!isDragging) return;
-                isDragging = false;
-                
-                const endX = e.clientX;
-                const diff = startX - endX;
-                
-                if (Math.abs(diff) > 50) {
-                    if (diff > 0) {
-                        nextSlide();
-                    } else {
-                        prevSlide();
-                    }
-                }
-            });
-            
-            slider.addEventListener('mouseleave', () => {
-                isDragging = false;
-            });
-        }
-        
-        updateSlider();
-        
-        if (totalSlides > 1) {
-            startAutoPlay();
-        }
-        
-        const testimonialsContainer = document.getElementById('testimonialsContainer');
-        if (testimonialsContainer) {
-            testimonialsContainer.addEventListener('mouseenter', () => {
-                if (isAutoPlaying) {
-                    clearInterval(autoPlayInterval);
-                }
-            });
-            
-            testimonialsContainer.addEventListener('mouseleave', () => {
-                if (isAutoPlaying) {
-                    autoPlayInterval = setInterval(nextSlide, 4000);
-                }
-            });
-        }
     }
 
     function showNotification(message, type) {
